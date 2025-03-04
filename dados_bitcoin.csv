@@ -5,51 +5,40 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 
-# Função para coletar dados históricos do Bitcoin usando a API do CoinGecko
 def coletar_dados():
     url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart'
     parametros = {'vs_currency': 'usd', 'days': '30', 'interval': 'daily'}
-    resposta = requests.get(url, params=parametros)
-    
-    if resposta.status_code != 200:
-        print('Erro ao acessar a API.')
+    try:
+        resposta = requests.get(url, params=parametros)
+        resposta.raise_for_status()
+        dados = resposta.json()
+        precos = [dia[1] for dia in dados.get('prices', [])]
+        if not precos:
+            raise ValueError('Nenhum dado de preço foi coletado.')
+        datas = pd.date_range(end=pd.Timestamp.today(), periods=len(precos))
+        df = pd.DataFrame({'Data': datas, 'Preco': precos})
+        df.to_csv('dados_bitcoin.csv', index=False, encoding='utf-8')
+        return df
+    except requests.exceptions.RequestException as e:
+        print(f'Erro ao acessar a API: {e}')
         return None
-    
-    dados = resposta.json()
-    precos = [dia[1] for dia in dados.get('prices', [])]  # Extraindo os preços
-    
-    if not precos:
-        print('Erro: Nenhum dado de preço foi coletado.')
+    except ValueError as e:
+        print(f'Erro nos dados coletados: {e}')
         return None
-    
-    num_dias = len(precos)
-    datas = pd.date_range(end=pd.Timestamp.today(), periods=num_dias)
-    
-    if len(datas) != len(precos):
-        print(f'Erro: Número de datas ({len(datas)}) e preços ({len(precos)}) não corresponde.')
-        return None
-    
-    df = pd.DataFrame({'Data': datas, 'Preco': precos})
-    df.to_csv('dados_bitcoin.csv', index=False, encoding='utf-8')
-    return df
 
-# Criar dataset de previsões
 def preparar_dados(df):
     if df is None or df.empty:
         print('Dados indisponíveis para processamento.')
         return None
-    
     df['Variacao'] = df['Preco'].pct_change()
-    df['Alvo'] = (df['Variacao'] > 0).astype(int)  # 1 se subiu, 0 se caiu
+    df['Alvo'] = (df['Variacao'] > 0).astype(int)
     df.dropna(inplace=True)
     return df
 
-# Treinar modelo e avaliar
 def treinar_modelo(df):
     if df is None or df.empty:
         print('Dados insuficientes para treinamento do modelo.')
         return
-    
     X = df[['Variacao']]
     y = df['Alvo']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
@@ -59,7 +48,6 @@ def treinar_modelo(df):
     acuracia = accuracy_score(y_test, y_pred)
     print(f'Acurácia do modelo: {acuracia:.2f}')
 
-# Executando os passos
 df = coletar_dados()
 df = preparar_dados(df)
 treinar_modelo(df)
