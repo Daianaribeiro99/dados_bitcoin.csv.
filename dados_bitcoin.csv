@@ -1,3 +1,4 @@
+
 import requests
 import pandas as pd
 import numpy as np
@@ -17,7 +18,16 @@ def coletar_dados():
     
     dados = resposta.json()
     precos = [dia[1] for dia in dados.get('prices', [])]  # Extraindo os preços
+    
+    if not precos:
+        print('Erro: Nenhum dado de preço foi coletado.')
+        return None
+    
     datas = pd.date_range(end=pd.Timestamp.today(), periods=len(precos))
+    
+    if len(datas) != len(precos):
+        print(f'Erro: Número de datas ({len(datas)}) e preços ({len(precos)}) não corresponde.')
+        return None
     
     df = pd.DataFrame({'Data': datas, 'Preco': precos})
     df.to_csv('dados_bitcoin.csv', index=False, encoding='utf-8')
