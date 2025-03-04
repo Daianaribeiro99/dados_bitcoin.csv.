@@ -1,3 +1,10 @@
+import requests
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+
 # Função para coletar dados históricos do Bitcoin usando a API do CoinGecko
 def coletar_dados():
     url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
@@ -13,7 +20,7 @@ def coletar_dados():
     datas = pd.date_range(end=pd.Timestamp.today(), periods=len(precos))
     
     df = pd.DataFrame({"Data": datas, "Preco": precos})
-    df.to_csv("dados_bitcoin.csv", index=False)
+    df.to_csv("dados_bitcoin.csv", index=False, encoding="utf-8")
     return df
 
 # Criar dataset de previsões
