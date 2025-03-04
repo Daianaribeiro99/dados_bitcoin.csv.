@@ -1,4 +1,3 @@
-
 import requests
 import pandas as pd
 import numpy as np
@@ -23,7 +22,8 @@ def coletar_dados():
         print('Erro: Nenhum dado de preço foi coletado.')
         return None
     
-    datas = pd.date_range(end=pd.Timestamp.today(), periods=len(precos))
+    num_dias = len(precos)
+    datas = pd.date_range(end=pd.Timestamp.today(), periods=num_dias)
     
     if len(datas) != len(precos):
         print(f'Erro: Número de datas ({len(datas)}) e preços ({len(precos)}) não corresponde.')
